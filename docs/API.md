@@ -1,168 +1,302 @@
-Product Requirements Document (PRD)
-Project Name: Multi-Tenant SaaS Project Management System
-Date: October 26, 2025
-Version: 1.0
-Status: Approved for Development
-
-1. User Personas
-This section defines the three primary user roles interacting with the system. Clearly identifying these personas ensures the platform addresses the needs of system owners, customer organizations, and end users effectively.
-
-Persona 1: Super Admin (System Owner)
-Role Description:
-The system-level administrator responsible for managing and operating the SaaS platform. This role does not belong to any tenant and has global visibility and control.
-
-Key Responsibilities:
-
-Monitor overall system health and tenant usage metrics
-
-Manage tenant subscriptions (upgrade or downgrade plans)
-
-Suspend, deactivate, or ban non-compliant tenants
-
-Manually onboard large enterprise customers when required
-
-Primary Goals:
-
-Maintain platform stability and reliability
-
-Maximize the number of active, paying tenants
-
-Prevent misuse or abuse of the system
-
-Pain Points:
-
-“I don’t have clear visibility into which tenants consume the most resources.”
-
-“Tracking global user growth across all tenants is difficult.”
-
-“Manually modifying tenant plans directly in the database is risky and time-consuming.”
-
-Persona 2: Tenant Admin (Organization Manager)
-Role Description:
-The administrator of an individual tenant organization, responsible for managing users, projects, and overall workspace configuration.
-
-Key Responsibilities:
-
-Configure organization settings (name, branding, details)
-
-Invite, manage, and remove team members
-
-Assign roles and permissions
-
-Oversee all projects and tasks within the organization
-
-Primary Goals:
-
-Organize team workflows efficiently
-
-Ensure strong data security and access control
-
-Avoid exceeding subscription limits unexpectedly
-
-Pain Points:
-
-“I don’t have a quick overview of what my team is currently working on.”
-
-“Onboarding new employees takes too much time.”
-
-“I worry about former employees retaining access to sensitive data.”
-
-Persona 3: End User (Team Member)
-Role Description:
-A regular employee who uses the platform daily to manage assigned work and collaborate with teammates.
-
-Key Responsibilities:
-
-Create, update, and complete tasks
-
-Collaborate within projects
-
-Track deadlines and progress
-
-Report work status to managers
-
-Primary Goals:
-
-Complete assigned tasks on time
-
-Clearly understand priorities
-
-Minimize unnecessary administrative work
-
-Pain Points:
-
-“Cluttered interfaces make it hard to focus on my tasks.”
-
-“I sometimes miss deadlines because due dates aren’t obvious.”
-
-“Finding the right project or document can be frustrating.”
-
-2. Functional Requirements
-This section defines the expected system behavior and functional capabilities.
-
-Module: Authentication & Authorization
-FR-001: Allow new organizations to register as tenants using an organization name, unique subdomain, and admin credentials
-
-FR-002: Support stateless authentication using JWT with a validity period of 24 hours
-
-FR-003: Enforce Role-Based Access Control (RBAC) with three roles: super_admin, tenant_admin, and user
-
-FR-004: Prevent cross-tenant data access by validating tenant_id on every API request
-
-FR-005: Provide a logout mechanism that invalidates the session on the client side
-
-Module: Tenant Management
-FR-006: Automatically assign a Free subscription plan to new tenants (maximum 5 users and 3 projects)
-
-FR-007: Allow Super Admins to view a paginated list of all tenants
-
-FR-008: Allow Super Admins to update tenant status and subscription plans
-
-FR-009: Enforce subscription limits immediately when creating users or projects
-
-Module: User Management
-FR-010: Allow Tenant Admins to create users within the tenant’s subscription limits
-
-FR-011: Enforce email uniqueness within the scope of a tenant
-
-FR-012: Allow Tenant Admins to deactivate users and revoke access immediately
-
-FR-013: Allow users to view their own profiles while restricting role changes
-
-Module: Project Management
-FR-014: Allow the creation of projects with a name, description, and status
-
-FR-015: Provide a dashboard displaying all tenant projects along with task statistics
-
-FR-016: Allow deletion of projects with cascading deletion of associated tasks
-
-Module: Task Management
-FR-017: Allow task creation with title, description, priority, and due date
-
-FR-018: Allow tasks to be assigned only to users within the same tenant
-
-FR-019: Provide a dedicated endpoint to update task status
-
-FR-020: Support task filtering by status, priority, and assignee
-
-3. Non-Functional Requirements
-These requirements define system quality attributes such as performance, security, scalability, and usability.
-
-NFR-001 (Performance):
-At least 95% of API requests must respond within 200ms under a load of 100 concurrent users
-
-NFR-002 (Security):
-User passwords must be hashed using Bcrypt with a minimum of 10 salt rounds
-
-NFR-003 (Scalability):
-The application must support horizontal scaling using Docker containers
-
-NFR-004 (Availability):
-The database must implement health checks to detect connectivity issues
-
-NFR-005 (Portability):
-The entire application stack must be deployable using docker-compose up -d
-
-NFR-006 (Usability):
-The user interface must be responsive on both mobile devices (<768px) and desktop screens
-
+Multi-Tenant SaaS Platform – API Documentation (Revised)
+Authentication & Security
+Authentication: JWT (Bearer Token)
+
+Header Format:
+Authorization: Bearer <JWT_TOKEN>
+
+Token Expiry: 24 hours
+
+Base URL (Local):
+http://localhost:5000/api
+
+1. System
+1.1 Health Check
+Verifies API server and database connectivity.
+
+Endpoint: GET /health
+
+Access: Public
+
+Response (200 OK)
+json
+Copy code
+{
+  "status": "ok",
+  "database": "connected"
+}
+2. Authentication Module
+2.1 Register Tenant (Sign Up)
+Creates a new Tenant (Organization) and its first Tenant Admin.
+
+Endpoint: POST /auth/register-tenant
+
+Access: Public
+
+Request Body
+json
+Copy code
+{
+  "tenantName": "Acme Corp",
+  "subdomain": "acme",
+  "adminEmail": "admin@acme.com",
+  "password": "SecurePassword123"
+}
+Response (201 Created)
+json
+Copy code
+{
+  "message": "Tenant registered successfully",
+  "tenantId": "uuid-string"
+}
+2.2 Login
+Authenticates a user and returns a JWT token.
+
+Endpoint: POST /auth/login
+
+Access: Public
+
+Request Body
+json
+Copy code
+{
+  "email": "admin@acme.com",
+  "password": "SecurePassword123"
+}
+Response (200 OK)
+json
+Copy code
+{
+  "token": "eyJhbGciOiJIUzI1NiIsIn...",
+  "user": {
+    "id": "uuid",
+    "email": "admin@acme.com",
+    "role": "tenant_admin",
+    "tenantId": "uuid"
+  }
+}
+2.3 Get Current User
+Returns details of the logged-in user.
+
+Endpoint: GET /auth/me
+
+Access: Protected (All Roles)
+
+Response (200 OK)
+json
+Copy code
+{
+  "user": {
+    "id": "uuid",
+    "fullName": "John Doe",
+    "email": "john@acme.com",
+    "role": "user",
+    "tenantId": "uuid"
+  }
+}
+3. Tenant Management (Super Admin Only)
+3.1 List All Tenants
+Endpoint: GET /tenants
+
+Access: Super Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "status": "success",
+  "results": 2,
+  "data": {
+    "tenants": [
+      { "id": "1", "name": "Acme Corp", "subdomain": "acme" },
+      { "id": "2", "name": "Beta Inc", "subdomain": "beta" }
+    ]
+  }
+}
+3.2 Get Tenant Details
+Endpoint: GET /tenants/:id
+
+Access: Super Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "id": "uuid",
+  "name": "Acme Corp",
+  "subdomain": "acme",
+  "status": "active"
+}
+3.3 Update Tenant
+Endpoint: PUT /tenants/:id
+
+Access: Super Admin
+
+Request Body
+json
+Copy code
+{
+  "name": "Acme Global",
+  "status": "inactive"
+}
+4. User Management (Tenant Admin)
+4.1 List Users
+Endpoint: GET /tenants/:tenantId/users
+
+Access: Tenant Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "data": {
+    "users": [
+      {
+        "id": "u1",
+        "fullName": "Alice",
+        "email": "alice@acme.com",
+        "role": "user"
+      }
+    ]
+  }
+}
+4.2 Create User
+Endpoint: POST /tenants/:tenantId/users
+
+Access: Tenant Admin
+
+Request Body
+json
+Copy code
+{
+  "email": "alice@acme.com",
+  "password": "Password123",
+  "fullName": "Alice Smith",
+  "role": "user"
+}
+4.3 Update User
+Endpoint: PUT /users/:id
+
+Access: Tenant Admin
+
+Request Body
+json
+Copy code
+{
+  "fullName": "Alice Jones",
+  "role": "tenant_admin"
+}
+4.4 Delete User
+Endpoint: DELETE /users/:id
+
+Access: Tenant Admin
+
+5. Project Management
+5.1 List Projects
+Endpoint: GET /projects
+
+Access: User / Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "data": {
+    "projects": [
+      {
+        "id": "p1",
+        "title": "Website Redesign",
+        "status": "active"
+      }
+    ]
+  }
+}
+5.2 Create Project
+Endpoint: POST /projects
+
+Access: Admin
+
+Request Body
+json
+Copy code
+{
+  "title": "Q3 Marketing Campaign",
+  "description": "Planning for Q3",
+  "status": "active"
+}
+5.3 Get Project Details
+Endpoint: GET /projects/:id
+
+Access: User / Admin
+
+5.4 Update Project
+Endpoint: PUT /projects/:id
+
+Access: Admin
+
+Request Body
+json
+Copy code
+{
+  "status": "completed"
+}
+Note:
+Project deletion uses: DELETE /projects/:id
+
+6. Task Management
+6.1 List Tasks
+Endpoint: GET /projects/:projectId/tasks
+
+Access: User / Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "data": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Draft content",
+        "status": "TODO"
+      }
+    ]
+  }
+}
+6.2 Create Task
+Endpoint: POST /projects/:projectId/tasks
+
+Access: Admin
+
+Request Body
+json
+Copy code
+{
+  "title": "Fix Header Bug",
+  "description": "CSS issue on mobile",
+  "priority": "HIGH",
+  "dueDate": "2023-12-31"
+}
+6.3 Update Task Status
+Endpoint: PATCH /tasks/:id/status
+
+Access: User / Admin
+
+Request Body
+json
+Copy code
+{
+  "status": "IN_PROGRESS"
+}
+6.4 Update Task Details
+Endpoint: PUT /tasks/:id
+
+Access: Admin
+
+Request Body
+json
+Copy code
+{
+  "title": "Fix Header Bug (Updated)",
+  "priority": "MEDIUM"
+}
