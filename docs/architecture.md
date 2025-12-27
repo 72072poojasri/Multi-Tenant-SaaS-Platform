@@ -1,608 +1,280 @@
-# Multi-Tenant SaaS Platform
+System Architecture Document
+Project Name: Multi-Tenant SaaS Project Management System
+Date: October 26, 2025
+Version: 1.0
+Author: AWS Student / Lead Developer
 
-## Overview
+1. System Architecture Overview
+The system is built using a containerized three-tier architecture to ensure scalability, modularity, and strict tenant isolation.
+All components are orchestrated using Docker Compose, enabling consistent environments across development, staging, and production.
 
-A production-grade **B2B Multi-Tenant SaaS Platform** designed to showcase real-world system design concepts such as **Multi-Tenancy**, **Strict Data Isolation**, and **Role-Based Access Control (RBAC)**. Each organization (Tenant) operates within a completely isolated workspace while sharing the same application infrastructure.
+Architecture Style:
 
-This project demonstrates how modern SaaS products (e.g., Jira, Notion, Asana) manage multiple organizations securely within a single system.
+Multi-tenant SaaS
 
----
+Shared Database, Shared Schema
 
-## Core Concepts Demonstrated
+Stateless backend with JWT-based authentication
 
-* **Multi-Tenancy with Isolation** using `tenant_id` at the database level
-* **RBAC (Role-Based Access Control)** across system roles
-* **JWT Authentication & Authorization**
-* **Secure Backend APIs** with validation and access guards
-* **Scalable SaaS Architecture** suitable for enterprise use
-
----
-
-## User Roles & Permissions
-
-### 1. Super Admin (System Level)
-
-* Manage all registered tenants
-* Monitor system-wide usage
-* No access to tenant-specific operational data
-
-### 2. Tenant Admin (Organization Level)
-
-* Manage organization users
-* Assign roles and permissions
-* Create and manage projects and tasks
-
-### 3. Standard User
-
-* Access only assigned projects
-* Create and update tasks
-* Cannot manage users or organization settings
-
----
-
-## Key Features
-
-### 🔐 Security & Authentication
-
-* JWT-based authentication
-* Password hashing using **Bcrypt**
-* Secure CORS configuration
-* Middleware-based role and tenant validation
-
-### 🏢 Multi-Tenancy Architecture
-
-* Centralized database with logical isolation
-* Every entity scoped using `tenant_id`
-* Protection against cross-tenant data leaks
-
-### 📊 Project & Task Management
-
-* Tenant-specific projects
-* Task assignment with priorities and deadlines
-* Task status lifecycle (Todo → In Progress → Completed)
-
-### 👥 Team Management
-
-* Tenant Admins can:
-
-  * Invite users
-  * Remove users
-  * Change roles
-
-### 🧑‍💻 Admin Dashboards
-
-* **Super Admin Dashboard**: Global tenant overview
-* **Tenant Dashboard**: Organization-specific analytics
-
-### 🎨 Responsive UI
-
-* Clean and intuitive React dashboard
-* Mobile-friendly layout using Flexbox & Grid
-
----
-
-## Technology Stack
-
-### Frontend
-
-* **React.js (v18)**
-* React Router DOM (v6)
-* Context API for state management
-* Axios for API communication
-* CSS3 (Flexbox & Grid)
-
-### Backend
-
-* **Node.js (v18)**
-* Express.js
-* Prisma ORM
-* JWT Authentication
-* Express Validator
-
-### Database & DevOps
-
-* PostgreSQL (v15)
-* Docker & Docker Compose
-* Alpine Linux containers
-
----
-
-## System Architecture
-
-```
-Client (React)
-     |
-REST APIs (JWT Secured)
-     |
-Node.js + Express
-     |
-Prisma ORM
-     |
-PostgreSQL (tenant_id scoped data)
-```
-
----
-
-## Installation & Setup
-
-### Prerequisites
-
-* Docker & Docker Compose (Recommended)
-* Node.js v18+
-* PostgreSQL (Local setup only)
-
----
-
-## Method 1: Docker Setup (Recommended)
-
-### Step 1: Clone Repository
-
-```bash
-git clone <your-repo-url>
-cd Multi-Tenant-SaaS-Platform
-```
-
-### Step 2: Configure Environment Variables
-
-Create `.env` in root (or verify `docker-compose.yml`):
-
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=saas_db
-```
-
-### Step 3: Run Application
-
-```bash
-docker-compose up -d --build
-```
-
-### Step 4: Access Application
-
-* Frontend: [http://localhost:3000](http://localhost:3000)
-* Backend Health: [http://localhost:5000/api/health](http://localhost:5000/api/health)
-
-✔ Migrations and seed data run automatically
-
----
-
-## Method 2: Local Development Setup
-
-### Backend Setup
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-npx prisma migrate dev --name init
-npm run seed
-npm start
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
----
-
-## Environment Variables
-
-| Variable     | Description                  | Default                                        |
-| ------------ | ---------------------------- | ---------------------------------------------- |
-| PORT         | Backend server port          | 5000                                           |
-| DATABASE_URL | PostgreSQL connection string | Docker value                                   |
-| JWT_SECRET   | JWT signing secret           | Custom                                         |
-| FRONTEND_URL | Allowed CORS origin          | [http://localhost:3000](http://localhost:3000) |
-
----
-
-## API Documentation
-
-Base URL (Local): `http://localhost:5000/api`
-
-All protected endpoints require the following header:
-
-```
-Authorization: Bearer <JWT_TOKEN>
-```
-
-Token expiry: **24 hours**
-
----
-
-## 1. System
-
-### Health Check
-
-* **Endpoint:** `GET /health`
-* **Access:** Public
-
-**Response (200 OK)**
-
-```json
-{
-  "status": "ok",
-  "database": "connected"
-}
-```
-
----
-
-## 2. Authentication
-
-### Register Tenant
-
-* **Endpoint:** `POST /auth/register-tenant`
-* **Access:** Public
-
-```json
-{
-  "tenantName": "Acme Corp",
-  "subdomain": "acme",
-  "adminEmail": "admin@acme.com",
-  "password": "SecurePassword123"
-}
-```
-
-**Response (201)**
-
-```json
-{
-  "message": "Tenant registered successfully",
-  "tenantId": "uuid-string"
-}
-```
-
-### Login
-
-* **Endpoint:** `POST /auth/login`
-* **Access:** Public
-
-```json
-{
-  "email": "admin@acme.com",
-  "password": "SecurePassword123"
-}
-```
-
-**Response (200)**
-
-```json
-{
-  "token": "jwt-token",
-  "user": {
-    "id": "uuid",
-    "email": "admin@acme.com",
-    "role": "tenant_admin",
-    "tenantId": "uuid"
-  }
-}
-```
-
-### Get Current User
-
-* **Endpoint:** `GET /auth/me`
-* **Access:** All authenticated roles
-
----
-
-## 3. Tenant Management (Super Admin)
-
-### List Tenants
-
-* **Endpoint:** `GET /tenants`
-* **Access:** Super Admin
-
-### Get Tenant Details
-
-* **Endpoint:** `GET /tenants/:id`
-* **Access:** Super Admin
-
-### Update Tenant
-
-* **Endpoint:** `PUT /tenants/:id`
-* **Access:** Super Admin
-
----
-
-## 4. User Management (Tenant Admin)
-
-### List Users
-
-* **Endpoint:** `GET /tenants/:tenantId/users`
-
-### Create User
-
-* **Endpoint:** `POST /tenants/:tenantId/users`
-
-### Update User
-
-* **Endpoint:** `PUT /users/:id`
-
-### Delete User
-
-* **Endpoint:** `DELETE /users/:id`
-
----
-
-## 5. Project Management
-
-### List Projects
-
-* **Endpoint:** `GET /projects`
-
-### Create Project
-
-* **Endpoint:** `POST /projects`
-
-### Get Project
-
-* **Endpoint:** `GET /projects/:id`
-
-### Update Project
-
-* **Endpoint:** `PUT /projects/:id`
-
----
-
-## 6. Task Management
-
-### List Tasks
-
-* **Endpoint:** `GET /projects/:projectId/tasks`
-
-### Create Task
-
-* **Endpoint:** `POST /projects/:projectId/tasks`
-
-### Update Task Status
-
-* **Endpoint:** `PATCH /tasks/:id/status`
-
-### Update Task
-
-* **Endpoint:** `PUT /tasks/:id`
-
----
-
-## Seeded Test Credentials
-
-### Super Admin
-
-* Email: [superadmin@system.com](mailto:superadmin@system.com)
-* Password: Admin@123
-
-### Tenant Admin (Demo Company)
-
-* Email: [admin@demo.com](mailto:admin@demo.com)
-* Password: Admin@123
-* Subdomain: demo
-
----
-
-## Future Enhancements
-
-* OAuth (Google / GitHub login)
-* Subscription & Billing (Stripe)
-* Audit Logs & Activity Tracking
-* Advanced Role Permissions
-* Microservices-based scaling
-
----
-
-## Project Purpose
-
-This project is built for **portfolio, interviews, and real-world SaaS architecture demonstration**, showcasing backend security, scalable design, and full-stack engineering skills.
-
----
-
-## Frontend (React) – Getting Started
-
-The frontend of this platform is built using **React 18** and was initially bootstrapped with **Create React App (CRA)**. The default CRA documentation has been streamlined and adapted specifically for this SaaS project.
-
----
-
-### Frontend Scripts
-
-From the `frontend` directory, you can run:
-
-#### `npm start`
-
-Runs the React application in development mode.
-
-* URL: [http://localhost:3000](http://localhost:3000)
-* Automatically reloads on code changes
-* Displays linting errors in the console
-
-#### `npm test`
-
-Runs unit tests in interactive watch mode.
-Useful for validating UI components and utilities.
-
-#### `npm run build`
-
-Creates an optimized production build in the `build/` folder:
-
-* Minified and optimized assets
-* Cache-friendly hashed filenames
-* Ready for deployment via Docker or static hosting
-
-#### `npm run eject`
-
-> ⚠️ One-way operation (not recommended)
-
-Ejects CRA configuration (Webpack, Babel, ESLint) for full control.
-This project **does not require ejecting** and follows CRA best practices.
-
----
-
-### Frontend Responsibilities
-
-* User authentication & session handling
-* Role-based route protection (RBAC)
-* Tenant-aware API communication
-* Project & task management UI
-* Responsive dashboard layouts
-
----
-
-### Frontend Architecture
-
-* **Context API** for global auth & tenant state
-* **React Router v6** for protected routing
-* **Axios** with JWT interceptors
-* Modular component structure for scalability
-
----
-
-### Notes
-
-* CRA boilerplate sections (PWA, bundle analysis, advanced config) were intentionally omitted to keep documentation concise and project-focused.
-* For React fundamentals, refer to the official React documentation.
-
----
-
-## System Architecture Document
-
-**Project:** Multi-Tenant SaaS Project Management System
-**Version:** 1.0
-**Author:** Lead Developer
-
----
-
-## Architecture Overview
-
-The system follows a **containerized three-tier architecture** designed for scalability, security, and strict tenant isolation. All services are orchestrated using **Docker Compose**, ensuring consistency across development and deployment environments.
-
----
-
-## High-Level Architecture
-
-```mermaid
+2. High-Level Architecture
+mermaid
+Copy code
 graph LR
-    User[Client Browser] --> Frontend[React Frontend Container]
-    Frontend --> Backend[Node.js API Container]
-    Backend --> DB[(PostgreSQL Database)]
+    User[Client Browser] --> FE[Frontend<br/>React + Vite]
+    FE --> BE[Backend API<br/>Node.js + Express]
+    BE --> DB[(PostgreSQL)]
 
-    subgraph DockerNetwork
-        Frontend
-        Backend
+    subgraph Docker_Network
+        FE
+        BE
         DB
     end
 
-    subgraph SecurityLayer
-        Backend --> JWT[JWT Authentication]
-        Backend --> RBAC[RBAC Middleware]
+    subgraph Security
+        BE --> JWT[JWT Authentication]
+        BE --> RBAC[RBAC Middleware]
     end
-```
+3. System Components
+The architecture separates responsibilities across Client, Application, and Data layers.
 
----
+3.1 Client Layer (Frontend)
+Technology: React.js (Vite)
 
-## Component Breakdown
+Port Mapping: 3000 (Host) → 3000 (Container)
 
-### Frontend Layer
+Responsibilities:
 
-* **Tech:** React.js
-* **Port:** 3000
-* **Responsibilities:**
+Render UI and handle user interactions
 
-  * UI rendering and routing
-  * JWT storage and session handling
-  * Tenant-aware API calls
+Manage authentication state (JWT)
 
-Tenant context is derived from login response or subdomain mapping.
+Communicate with backend APIs
 
----
+Multi-Tenancy Handling:
 
-### Backend Layer
+Tenant context determined by:
 
-* **Tech:** Node.js, Express.js
-* **Port:** 5000
-* **Responsibilities:**
+Subdomain (tenant1.app.com), or
 
-  * Authentication & authorization
-  * Business logic execution
-  * Tenant isolation enforcement
+Tenant selection during login
 
-**Isolation Strategy:**
+3.2 Application Layer (Backend API)
+Technology: Node.js, Express.js
 
-* `tenant_id` extracted from JWT
-* Automatically injected into all database queries
-* Prevents cross-tenant data access
+Port Mapping: 5000 (Host) → 5000 (Container)
 
----
+Responsibilities:
 
-### Database Layer
+Business logic execution
 
-* **Tech:** PostgreSQL 15
-* **Model:** Shared Database, Shared Schema
+JWT-based authentication
 
-Each tenant-owned table includes a mandatory `tenant_id` column used as the logical isolation key.
+Role-Based Access Control (RBAC)
 
----
+Tenant isolation enforcement
 
-## Database Design (ERD)
+Tenant Isolation Mechanism:
 
-```mermaid
+tenant_id extracted from JWT payload
+
+Injected into every database query
+
+Prevents cross-tenant data access
+
+3.3 Data Layer (Database)
+Technology: PostgreSQL 15
+
+Port Mapping: 5432 (Host) → 5432 (Container)
+
+Responsibilities:
+
+Persistent relational data storage
+
+Enforce data integrity via constraints and indexes
+
+Isolation Strategy:
+
+Shared database and schema
+
+Logical isolation using tenant_id in all tenant-owned tables
+
+4. Multi-Tenant Architecture View
+mermaid
+Copy code
+graph LR
+    Client[Frontend<br/>React :3000] -->|HTTPS + JWT| API[Backend API<br/>Node :5000]
+    API -->|SQL + tenant_id| DB[(PostgreSQL<br/>Shared DB)]
+
+    subgraph Tenant_Isolation
+        API
+        DB
+    end
+5. Database Architecture & ER Diagram
+The database schema is normalized to Third Normal Form (3NF).
+The tenant_id column acts as the logical partition key to enforce tenant-level isolation.
+
+mermaid
+Copy code
 erDiagram
     TENANTS ||--o{ USERS : owns
     TENANTS ||--o{ PROJECTS : owns
     TENANTS ||--o{ TASKS : owns
+    TENANTS ||--o{ AUDIT_LOGS : records
 
     USERS ||--o{ PROJECTS : creates
     PROJECTS ||--o{ TASKS : contains
     USERS ||--o{ TASKS : assigned_to
-```
 
----
+    TENANTS {
+        uuid id PK
+        string name
+        string subdomain UK
+        string status
+        string subscription_plan
+        int max_users
+        int max_projects
+    }
 
-## API Architecture
+    USERS {
+        uuid id PK
+        uuid tenant_id FK
+        string email
+        string password_hash
+        string full_name
+        string role
+    }
 
-The backend exposes **RESTful APIs** grouped into logical modules. All responses follow a consistent structure:
+    PROJECTS {
+        uuid id PK
+        uuid tenant_id FK
+        uuid created_by FK
+        string name
+        string description
+        string status
+    }
 
-```json
+    TASKS {
+        uuid id PK
+        uuid tenant_id FK
+        uuid project_id FK
+        uuid assigned_to FK
+        string title
+        string priority
+        string status
+        date due_date
+    }
+
+    AUDIT_LOGS {
+        uuid id PK
+        uuid tenant_id FK
+        string action
+        string entity_type
+        uuid entity_id
+        string ip_address
+    }
+6. Schema Details
+6.1 tenants (Root Table)
+Primary Key: id (UUID)
+
+Attributes:
+name, subdomain (UNIQUE), status, subscription_plan
+
+Constraints:
+max_users, max_projects
+
+Note:
+Root entity (does not reference tenant_id)
+
+6.2 users
+Primary Key: id (UUID)
+
+Foreign Key:
+tenant_id → tenants.id (ON DELETE CASCADE)
+
+Constraints:
+UNIQUE (tenant_id, email) ensures tenant-level email uniqueness
+
+6.3 projects
+Primary Key: id (UUID)
+
+Foreign Keys:
+
+tenant_id → tenants.id
+
+created_by → users.id
+
+Index:
+
+sql
+Copy code
+CREATE INDEX idx_projects_tenant ON projects(tenant_id);
+6.4 tasks
+Primary Key: id (UUID)
+
+Foreign Keys:
+
+tenant_id → tenants.id
+
+project_id → projects.id
+
+assigned_to → users.id
+
+Index:
+
+sql
+Copy code
+CREATE INDEX idx_tasks_tenant ON tasks(tenant_id);
+6.5 audit_logs
+Primary Key: id (UUID)
+
+Foreign Key:
+tenant_id → tenants.id
+
+Purpose:
+Stores security and activity events for auditing and compliance
+
+7. API Architecture
+The backend exposes 19 RESTful endpoints, strictly following REST conventions and tenant scoping.
+
+Standard API Response Format
+json
+Copy code
 {
   "success": true,
   "message": "Operation completed successfully",
   "data": {}
 }
-```
+Module A: Authentication
+Method	Endpoint	Description	Auth	Role
+POST	/api/auth/register-tenant	Register tenant & admin	No	Public
+POST	/api/auth/login	Login and receive JWT	No	Public
+GET	/api/auth/me	Get current user	Yes	Any
+POST	/api/auth/logout	Logout user	Yes	Any
 
----
+Module B: Tenant Management
+Method	Endpoint	Description	Auth	Role
+GET	/api/tenants	List all tenants	Yes	super_admin
+GET	/api/tenants/:tenantId	Get tenant details	Yes	super_admin
+PUT	/api/tenants/:tenantId	Update tenant	Yes	super_admin
 
-### Authentication
+Module C: User Management
+Method	Endpoint	Description	Auth	Role
+POST	/api/tenants/:tenantId/users	Create user	Yes	tenant_admin
+GET	/api/tenants/:tenantId/users	List users	Yes	Tenant member
+PUT	/api/users/:userId	Update user	Yes	Admin / Self
+DELETE	/api/users/:userId	Delete user	Yes	tenant_admin
 
-* `/api/auth/register-tenant`
-* `/api/auth/login`
-* `/api/auth/me`
+Module D: Project Management
+Method	Endpoint	Description	Auth	Role
+POST	/api/projects	Create project	Yes	Tenant member
+GET	/api/projects	List projects	Yes	Tenant member
+PUT	/api/projects/:projectId	Update project	Yes	Creator / Admin
+DELETE	/api/projects/:projectId	Delete project	Yes	Creator / Admin
 
-### Tenant Management (Super Admin)
-
-* `/api/tenants`
-* `/api/tenants/:tenantId`
-
-### User Management
-
-* `/api/tenants/:tenantId/users`
-* `/api/users/:userId`
-
-### Project & Task Management
-
-* `/api/projects`
-* `/api/projects/:projectId/tasks`
-* `/api/tasks/:taskId`
-
----
-
-## Key Architecture Benefits
-
-* Strong tenant isolation
-* Scalable container-based deployment
-* Clean separation of concerns
-* Enterprise-grade RBAC security
+Module E: Task Management
+Method	Endpoint	Description	Auth	Role
+POST	/api/projects/:projectId/tasks	Create task	Yes	Tenant member
+GET	/api/projects/:projectId/tasks	List tasks	Yes	Tenant member
+PATCH	/api/tasks/:taskId/status	Update task status	Yes	Tenant member
+PUT	/api/tasks/:taskId	Update task	Yes	Tenant member
 
