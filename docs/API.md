@@ -1,337 +1,168 @@
-System Architecture Document
+Product Requirements Document (PRD)
 Project Name: Multi-Tenant SaaS Project Management System
 Date: October 26, 2025
 Version: 1.0
-Author: AWS Student / Lead Developer
+Status: Approved for Development
 
-1. Architecture Overview
-The system is built using a containerized three-tier web architecture, designed to ensure scalability, modularity, and secure tenant isolation.
-All services are orchestrated using Docker Compose, providing consistent environments across development and deployment stages.
+1. User Personas
+This section defines the three primary user roles interacting with the system. Clearly identifying these personas ensures the platform addresses the needs of system owners, customer organizations, and end users effectively.
 
-2. High-Level Architecture Diagram
-mermaid
-Copy code
-graph LR
-    User[Client Browser] --> Frontend[Frontend Container<br/>React + Vite]
-    Frontend --> Backend[Backend Container<br/>Node.js + Express]
-    Backend --> DB[(PostgreSQL Database)]
+Persona 1: Super Admin (System Owner)
+Role Description:
+The system-level administrator responsible for managing and operating the SaaS platform. This role does not belong to any tenant and has global visibility and control.
 
-    subgraph DockerNetwork
-        Frontend
-        Backend
-        DB
-    end
+Key Responsibilities:
 
-    subgraph SecurityLayer
-        Backend --> JWT[JWT Authentication]
-        Backend --> RBAC[RBAC Middleware]
-    end
-3. System Architecture & Components
-The application follows a multi-tenant, containerized architecture with a clear separation of concerns across:
+Monitor overall system health and tenant usage metrics
 
-Client Layer (Frontend)
+Manage tenant subscriptions (upgrade or downgrade plans)
 
-Application Layer (Backend API)
+Suspend, deactivate, or ban non-compliant tenants
 
-Data Layer (Database)
+Manually onboard large enterprise customers when required
 
-Each layer is independently scalable and communicates through well-defined interfaces.
+Primary Goals:
 
-4. Component Details
-4.1 Client Layer (Frontend)
-Technology: React.js (Vite build tool)
+Maintain platform stability and reliability
 
-Container Port Mapping: 3000 (External) → 3000 (Internal)
+Maximize the number of active, paying tenants
 
-Responsibilities:
+Prevent misuse or abuse of the system
 
-Render the user interface
+Pain Points:
 
-Handle user interactions
+“I don’t have clear visibility into which tenants consume the most resources.”
 
-Manage authentication state (JWT storage)
+“Tracking global user growth across all tenants is difficult.”
 
-Communicate with backend REST APIs
+“Manually modifying tenant plans directly in the database is risky and time-consuming.”
 
-Multi-Tenancy Handling:
+Persona 2: Tenant Admin (Organization Manager)
+Role Description:
+The administrator of an individual tenant organization, responsible for managing users, projects, and overall workspace configuration.
 
-Tenant context is resolved using:
+Key Responsibilities:
 
-Subdomain-based routing (e.g., tenant1.app.com), or
+Configure organization settings (name, branding, details)
 
-Tenant selection during login
+Invite, manage, and remove team members
 
-4.2 Application Layer (Backend API)
-Technology: Node.js, Express.js
+Assign roles and permissions
 
-Container Port Mapping: 5000 (External) → 5000 (Internal)
+Oversee all projects and tasks within the organization
 
-Responsibilities:
+Primary Goals:
 
-Execute business logic
+Organize team workflows efficiently
 
-Handle authentication using JWT
+Ensure strong data security and access control
 
-Enforce authorization via RBAC
+Avoid exceeding subscription limits unexpectedly
 
-Guarantee tenant-level data isolation
+Pain Points:
 
-Tenant Isolation Mechanism:
+“I don’t have a quick overview of what my team is currently working on.”
 
-JWT contains the tenant_id
+“Onboarding new employees takes too much time.”
 
-Middleware extracts and validates tenant_id
+“I worry about former employees retaining access to sensitive data.”
 
-All database queries are scoped by tenant_id
+Persona 3: End User (Team Member)
+Role Description:
+A regular employee who uses the platform daily to manage assigned work and collaborate with teammates.
 
-Prevents cross-tenant data access
+Key Responsibilities:
 
-4.3 Data Layer (Database)
-Technology: PostgreSQL 15
+Create, update, and complete tasks
 
-Container Port Mapping: 5432 (External) → 5432 (Internal)
+Collaborate within projects
 
-Responsibilities:
+Track deadlines and progress
 
-Persistent relational data storage
+Report work status to managers
 
-Isolation Strategy:
+Primary Goals:
 
-Shared Database, Shared Schema
+Complete assigned tasks on time
 
-Logical isolation using a tenant_id discriminator
+Clearly understand priorities
 
-tenant_id is present in all tenant-owned tables
+Minimize unnecessary administrative work
 
-5. High-Level Multi-Tenant Architecture
-mermaid
-Copy code
-graph LR
-    Client[Frontend<br/>React.js :3000] -->|HTTPS + JWT| API[Backend API<br/>Node.js :5000]
-    API -->|Tenant-Scoped SQL Queries| DB[(PostgreSQL 15<br/>Shared Database)]
-
-    subgraph Multi-Tenant Isolation
-        API
-        DB
-    end
-6. Database Schema Design (ERD)
-The database schema is designed following Third Normal Form (3NF) to reduce redundancy and maintain data integrity.
-
-The tenant_id column acts as the logical partition key, enabling secure multi-tenancy within a shared database, shared schema model.
-
-mermaid
-Copy code
-erDiagram
-    TENANTS ||--o{ USERS : owns
-    TENANTS ||--o{ PROJECTS : owns
-    TENANTS ||--o{ TASKS : owns
-    TENANTS ||--o{ AUDIT_LOGS : records
+Pain Points:
 
-    USERS ||--o{ PROJECTS : creates
-    PROJECTS ||--o{ TASKS : contains
-    USERS ||--o{ TASKS : assigned_to
+“Cluttered interfaces make it hard to focus on my tasks.”
 
-    TENANTS {
-        uuid id PK
-        string name
-        string subdomain UK
-        string status
-        string subscription_plan
-        int max_users
-        int max_projects
-    }
+“I sometimes miss deadlines because due dates aren’t obvious.”
 
-    USERS {
-        uuid id PK
-        uuid tenant_id FK
-        string email
-        string password_hash
-        string full_name
-        string role
-    }
+“Finding the right project or document can be frustrating.”
 
-    PROJECTS {
-        uuid id PK
-        uuid tenant_id FK
-        uuid created_by FK
-        string name
-        string description
-        string status
-    }
+2. Functional Requirements
+This section defines the expected system behavior and functional capabilities.
 
-    TASKS {
-        uuid id PK
-        uuid tenant_id FK
-        uuid project_id FK
-        uuid assigned_to FK
-        string title
-        string priority
-        string status
-        date due_date
-    }
+Module: Authentication & Authorization
+FR-001: Allow new organizations to register as tenants using an organization name, unique subdomain, and admin credentials
 
-    AUDIT_LOGS {
-        uuid id PK
-        uuid tenant_id FK
-        string action
-        string entity_type
-        uuid entity_id
-        string ip_address
-    }
-7. Schema Details
-7.1 tenants (Root Entity)
-Primary Key: id (UUID)
+FR-002: Support stateless authentication using JWT with a validity period of 24 hours
 
-Attributes:
+FR-003: Enforce Role-Based Access Control (RBAC) with three roles: super_admin, tenant_admin, and user
 
-name
+FR-004: Prevent cross-tenant data access by validating tenant_id on every API request
 
-subdomain (Unique)
+FR-005: Provide a logout mechanism that invalidates the session on the client side
 
-status
+Module: Tenant Management
+FR-006: Automatically assign a Free subscription plan to new tenants (maximum 5 users and 3 projects)
 
-subscription_plan
+FR-007: Allow Super Admins to view a paginated list of all tenants
 
-Limits & Constraints:
+FR-008: Allow Super Admins to update tenant status and subscription plans
 
-max_users
+FR-009: Enforce subscription limits immediately when creating users or projects
 
-max_projects
+Module: User Management
+FR-010: Allow Tenant Admins to create users within the tenant’s subscription limits
 
-Isolation Note:
+FR-011: Enforce email uniqueness within the scope of a tenant
 
-Root table; does not contain tenant_id
+FR-012: Allow Tenant Admins to deactivate users and revoke access immediately
 
-7.2 users
-Primary Key: id (UUID)
+FR-013: Allow users to view their own profiles while restricting role changes
 
-Foreign Key:
+Module: Project Management
+FR-014: Allow the creation of projects with a name, description, and status
 
-tenant_id → tenants.id (ON DELETE CASCADE) [ISOLATION KEY]
+FR-015: Provide a dashboard displaying all tenant projects along with task statistics
 
-Attributes:
+FR-016: Allow deletion of projects with cascading deletion of associated tasks
 
-email
+Module: Task Management
+FR-017: Allow task creation with title, description, priority, and due date
 
-password_hash
+FR-018: Allow tasks to be assigned only to users within the same tenant
 
-full_name
+FR-019: Provide a dedicated endpoint to update task status
 
-role
+FR-020: Support task filtering by status, priority, and assignee
 
-Constraints:
+3. Non-Functional Requirements
+These requirements define system quality attributes such as performance, security, scalability, and usability.
 
-UNIQUE (tenant_id, email)
-(Email uniqueness enforced per tenant)
+NFR-001 (Performance):
+At least 95% of API requests must respond within 200ms under a load of 100 concurrent users
 
-7.3 projects
-Primary Key: id (UUID)
+NFR-002 (Security):
+User passwords must be hashed using Bcrypt with a minimum of 10 salt rounds
 
-Foreign Keys:
+NFR-003 (Scalability):
+The application must support horizontal scaling using Docker containers
 
-tenant_id → tenants.id (ON DELETE CASCADE) [ISOLATION KEY]
+NFR-004 (Availability):
+The database must implement health checks to detect connectivity issues
 
-created_by → users.id
+NFR-005 (Portability):
+The entire application stack must be deployable using docker-compose up -d
 
-Attributes:
-
-name
-
-description
-
-status
-
-Index:
-
-sql
-Copy code
-CREATE INDEX idx_projects_tenant ON projects(tenant_id);
-7.4 tasks
-Primary Key: id (UUID)
-
-Foreign Keys:
-
-project_id → projects.id (ON DELETE CASCADE)
-
-tenant_id → tenants.id [ISOLATION KEY]
-
-assigned_to → users.id (Nullable)
-
-Attributes:
-
-title
-
-priority
-
-status
-
-due_date
-
-Index:
-
-sql
-Copy code
-CREATE INDEX idx_tasks_tenant ON tasks(tenant_id);
-7.5 audit_logs
-Primary Key: id (UUID)
-
-Foreign Key:
-
-tenant_id → tenants.id [ISOLATION KEY]
-
-Attributes:
-
-action
-
-entity_type
-
-entity_id
-
-ip_address
-
-8. API Architecture
-The system exposes 19 RESTful endpoints, following standard REST conventions and tenant-scoped access control.
-
-Standard API Response Format
-json
-Copy code
-{
-  "success": true,
-  "message": "Operation completed successfully",
-  "data": {}
-}
-9. API Modules
-Module A: Authentication
-Method	Endpoint	Description	Auth Required	Role
-POST	/api/auth/register-tenant	Register new tenant and admin	No	Public
-POST	/api/auth/login	Authenticate user and issue JWT	No	Public
-GET	/api/auth/me	Get current user context	Yes	Any
-POST	/api/auth/logout	Logout user session	Yes	Any
-
-Module B: Tenant Management
-Method	Endpoint	Description	Auth Required	Role
-GET	/api/tenants	List all tenants	Yes	super_admin
-GET	/api/tenants/:tenantId	Get tenant details	Yes	super_admin, owner
-PUT	/api/tenants/:tenantId	Update tenant settings	Yes	super_admin, tenant_admin
-
-Module C: User Management
-Method	Endpoint	Description	Auth Required	Role
-POST	/api/tenants/:tenantId/users	Create user	Yes	tenant_admin
-GET	/api/tenants/:tenantId/users	List users	Yes	Tenant member
-PUT	/api/users/:userId	Update user	Yes	tenant_admin, Self
-DELETE	/api/users/:userId	Delete user	Yes	tenant_admin
-
-Module D: Project Management
-Method	Endpoint	Description	Auth Required	Role
-POST	/api/projects	Create project	Yes	Tenant member
-GET	/api/projects	List projects	Yes	Tenant member
-PUT	/api/projects/:projectId	Update project	Yes	Creator, Admin
-DELETE	/api/projects/:projectId	Delete project	Yes	Creator, Admin
-
-Module E: Task Management
-Method	Endpoint	Description	Auth Required	Role
-POST	/api/projects/:projectId/tasks	Create task	Yes	Tenant member
-GET	/api/projects/:projectId/tasks	List tasks	Yes	Tenant member
-PATCH	/api/tasks/:taskId/status	Update task status	Yes	Tenant member
-PUT	/api/tasks/:taskId	Update task details	Yes	Tenant member
+NFR-006 (Usability):
+The user interface must be responsive on both mobile devices (<768px) and desktop screens
 
