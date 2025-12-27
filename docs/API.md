@@ -1,280 +1,73 @@
-# Multi-Tenant SaaS Platform
+Multi-Tenant SaaS Platform – API Documentation
+Authentication & Security
+Authentication Method: Bearer Token (JWT)
 
-## Overview
+Authorization Header:
+Authorization: Bearer <your_jwt_token>
 
-A production-grade **B2B Multi-Tenant SaaS Platform** designed to showcase real-world system design concepts such as **Multi-Tenancy**, **Strict Data Isolation**, and **Role-Based Access Control (RBAC)**. Each organization (Tenant) operates within a completely isolated workspace while sharing the same application infrastructure.
+Token Expiry: 24 hours
 
-This project demonstrates how modern SaaS products (e.g., Jira, Notion, Asana) manage multiple organizations securely within a single system.
+Base URL (Local):
+http://localhost:5000/api
 
----
+1. System
+1.1 Health Check
+Checks whether the API server and database connection are healthy.
 
-## Core Concepts Demonstrated
+Endpoint: GET /health
 
-* **Multi-Tenancy with Isolation** using `tenant_id` at the database level
-* **RBAC (Role-Based Access Control)** across system roles
-* **JWT Authentication & Authorization**
-* **Secure Backend APIs** with validation and access guards
-* **Scalable SaaS Architecture** suitable for enterprise use
+Access: Public
 
----
-
-## User Roles & Permissions
-
-### 1. Super Admin (System Level)
-
-* Manage all registered tenants
-* Monitor system-wide usage
-* No access to tenant-specific operational data
-
-### 2. Tenant Admin (Organization Level)
-
-* Manage organization users
-* Assign roles and permissions
-* Create and manage projects and tasks
-
-### 3. Standard User
-
-* Access only assigned projects
-* Create and update tasks
-* Cannot manage users or organization settings
-
----
-
-## Key Features
-
-### 🔐 Security & Authentication
-
-* JWT-based authentication
-* Password hashing using **Bcrypt**
-* Secure CORS configuration
-* Middleware-based role and tenant validation
-
-### 🏢 Multi-Tenancy Architecture
-
-* Centralized database with logical isolation
-* Every entity scoped using `tenant_id`
-* Protection against cross-tenant data leaks
-
-### 📊 Project & Task Management
-
-* Tenant-specific projects
-* Task assignment with priorities and deadlines
-* Task status lifecycle (Todo → In Progress → Completed)
-
-### 👥 Team Management
-
-* Tenant Admins can:
-
-  * Invite users
-  * Remove users
-  * Change roles
-
-### 🧑‍💻 Admin Dashboards
-
-* **Super Admin Dashboard**: Global tenant overview
-* **Tenant Dashboard**: Organization-specific analytics
-
-### 🎨 Responsive UI
-
-* Clean and intuitive React dashboard
-* Mobile-friendly layout using Flexbox & Grid
-
----
-
-## Technology Stack
-
-### Frontend
-
-* **React.js (v18)**
-* React Router DOM (v6)
-* Context API for state management
-* Axios for API communication
-* CSS3 (Flexbox & Grid)
-
-### Backend
-
-* **Node.js (v18)**
-* Express.js
-* Prisma ORM
-* JWT Authentication
-* Express Validator
-
-### Database & DevOps
-
-* PostgreSQL (v15)
-* Docker & Docker Compose
-* Alpine Linux containers
-
----
-
-## System Architecture
-
-```
-Client (React)
-     |
-REST APIs (JWT Secured)
-     |
-Node.js + Express
-     |
-Prisma ORM
-     |
-PostgreSQL (tenant_id scoped data)
-```
-
----
-
-## Installation & Setup
-
-### Prerequisites
-
-* Docker & Docker Compose (Recommended)
-* Node.js v18+
-* PostgreSQL (Local setup only)
-
----
-
-## Method 1: Docker Setup (Recommended)
-
-### Step 1: Clone Repository
-
-```bash
-git clone <your-repo-url>
-cd Multi-Tenant-SaaS-Platform
-```
-
-### Step 2: Configure Environment Variables
-
-Create `.env` in root (or verify `docker-compose.yml`):
-
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=saas_db
-```
-
-### Step 3: Run Application
-
-```bash
-docker-compose up -d --build
-```
-
-### Step 4: Access Application
-
-* Frontend: [http://localhost:3000](http://localhost:3000)
-* Backend Health: [http://localhost:5000/api/health](http://localhost:5000/api/health)
-
-✔ Migrations and seed data run automatically
-
----
-
-## Method 2: Local Development Setup
-
-### Backend Setup
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-npx prisma migrate dev --name init
-npm run seed
-npm start
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
----
-
-## Environment Variables
-
-| Variable     | Description                  | Default                                        |
-| ------------ | ---------------------------- | ---------------------------------------------- |
-| PORT         | Backend server port          | 5000                                           |
-| DATABASE_URL | PostgreSQL connection string | Docker value                                   |
-| JWT_SECRET   | JWT signing secret           | Custom                                         |
-| FRONTEND_URL | Allowed CORS origin          | [http://localhost:3000](http://localhost:3000) |
-
----
-
-## API Documentation
-
-Base URL (Local): `http://localhost:5000/api`
-
-All protected endpoints require the following header:
-
-```
-Authorization: Bearer <JWT_TOKEN>
-```
-
-Token expiry: **24 hours**
-
----
-
-## 1. System
-
-### Health Check
-
-* **Endpoint:** `GET /health`
-* **Access:** Public
-
-**Response (200 OK)**
-
-```json
+Response (200 OK)
+json
+Copy code
 {
   "status": "ok",
   "database": "connected"
 }
-```
+2. Authentication Module
+2.1 Register Tenant (Sign Up)
+Registers a new Organization (Tenant) along with its first Admin user.
 
----
+Endpoint: POST /auth/register-tenant
 
-## 2. Authentication
+Access: Public
 
-### Register Tenant
-
-* **Endpoint:** `POST /auth/register-tenant`
-* **Access:** Public
-
-```json
+Request Body (JSON)
+json
+Copy code
 {
   "tenantName": "Acme Corp",
   "subdomain": "acme",
   "adminEmail": "admin@acme.com",
   "password": "SecurePassword123"
 }
-```
-
-**Response (201)**
-
-```json
+Response (201 Created)
+json
+Copy code
 {
   "message": "Tenant registered successfully",
   "tenantId": "uuid-string"
 }
-```
+2.2 Login
+Authenticates a user and returns a JWT access token.
 
-### Login
+Endpoint: POST /auth/login
 
-* **Endpoint:** `POST /auth/login`
-* **Access:** Public
+Access: Public
 
-```json
+Request Body (JSON)
+json
+Copy code
 {
   "email": "admin@acme.com",
   "password": "SecurePassword123"
 }
-```
-
-**Response (200)**
-
-```json
+Response (200 OK)
+json
+Copy code
 {
-  "token": "jwt-token",
+  "token": "eyJhbGciOiJIUzI1NiIsIn...",
   "user": {
     "id": "uuid",
     "email": "admin@acme.com",
@@ -282,186 +75,245 @@ Token expiry: **24 hours**
     "tenantId": "uuid"
   }
 }
-```
-
-### Get Current User
-
-* **Endpoint:** `GET /auth/me`
-* **Access:** All authenticated roles
-
----
-
-## 3. Tenant Management (Super Admin)
-
-### List Tenants
-
-* **Endpoint:** `GET /tenants`
-* **Access:** Super Admin
-
-### Get Tenant Details
-
-* **Endpoint:** `GET /tenants/:id`
-* **Access:** Super Admin
-
-### Update Tenant
-
-* **Endpoint:** `PUT /tenants/:id`
-* **Access:** Super Admin
-
----
-
-## 4. User Management (Tenant Admin)
-
-### List Users
-
-* **Endpoint:** `GET /tenants/:tenantId/users`
-
-### Create User
-
-* **Endpoint:** `POST /tenants/:tenantId/users`
-
-### Update User
-
-* **Endpoint:** `PUT /users/:id`
-
-### Delete User
-
-* **Endpoint:** `DELETE /users/:id`
-
----
-
-## 5. Project Management
-
-### List Projects
-
-* **Endpoint:** `GET /projects`
-
-### Create Project
-
-* **Endpoint:** `POST /projects`
-
-### Get Project
-
-* **Endpoint:** `GET /projects/:id`
-
-### Update Project
-
-* **Endpoint:** `PUT /projects/:id`
-
----
-
-## 6. Task Management
-
-### List Tasks
-
-* **Endpoint:** `GET /projects/:projectId/tasks`
-
-### Create Task
-
-* **Endpoint:** `POST /projects/:projectId/tasks`
-
-### Update Task Status
-
-* **Endpoint:** `PATCH /tasks/:id/status`
-
-### Update Task
-
-* **Endpoint:** `PUT /tasks/:id`
-
----
-
-## Seeded Test Credentials
-
-### Super Admin
-
-* Email: [superadmin@system.com](mailto:superadmin@system.com)
-* Password: Admin@123
-
-### Tenant Admin (Demo Company)
-
-* Email: [admin@demo.com](mailto:admin@demo.com)
-* Password: Admin@123
-* Subdomain: demo
-
----
-
-## Future Enhancements
-
-* OAuth (Google / GitHub login)
-* Subscription & Billing (Stripe)
-* Audit Logs & Activity Tracking
-* Advanced Role Permissions
-* Microservices-based scaling
-
----
-
-## Project Purpose
-
-This project is built for **portfolio, interviews, and real-world SaaS architecture demonstration**, showcasing backend security, scalable design, and full-stack engineering skills.
-
----
-
-## Frontend (React) – Getting Started
-
-The frontend of this platform is built using **React 18** and was initially bootstrapped with **Create React App (CRA)**. The default CRA documentation has been streamlined and adapted specifically for this SaaS project.
-
----
-
-### Frontend Scripts
-
-From the `frontend` directory, you can run:
-
-#### `npm start`
-
-Runs the React application in development mode.
-
-* URL: [http://localhost:3000](http://localhost:3000)
-* Automatically reloads on code changes
-* Displays linting errors in the console
-
-#### `npm test`
-
-Runs unit tests in interactive watch mode.
-Useful for validating UI components and utilities.
-
-#### `npm run build`
-
-Creates an optimized production build in the `build/` folder:
-
-* Minified and optimized assets
-* Cache-friendly hashed filenames
-* Ready for deployment via Docker or static hosting
-
-#### `npm run eject`
-
-> ⚠️ One-way operation (not recommended)
-
-Ejects CRA configuration (Webpack, Babel, ESLint) for full control.
-This project **does not require ejecting** and follows CRA best practices.
-
----
-
-### Frontend Responsibilities
-
-* User authentication & session handling
-* Role-based route protection (RBAC)
-* Tenant-aware API communication
-* Project & task management UI
-* Responsive dashboard layouts
-
----
-
-### Frontend Architecture
-
-* **Context API** for global auth & tenant state
-* **React Router v6** for protected routing
-* **Axios** with JWT interceptors
-* Modular component structure for scalability
-
----
-
-### Notes
-
-* CRA boilerplate sections (PWA, bundle analysis, advanced config) were intentionally omitted to keep documentation concise and project-focused.
-* For React fundamentals, refer to the official React documentation.
-
+2.3 Get Current User
+Retrieves the profile of the currently authenticated user.
+
+Endpoint: GET /auth/me
+
+Access: Protected (All Roles)
+
+Response (200 OK)
+json
+Copy code
+{
+  "user": {
+    "id": "uuid",
+    "fullName": "John Doe",
+    "email": "john@acme.com",
+    "role": "user"
+  }
+}
+3. Tenant Management (Super Admin)
+3.1 List All Tenants
+Retrieves all registered tenants.
+Accessible only by Super Admin users.
+
+Endpoint: GET /tenants
+
+Access: Super Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "status": "success",
+  "results": 2,
+  "data": {
+    "tenants": [
+      { "id": "1", "name": "Acme Corp", "subdomain": "acme" },
+      { "id": "2", "name": "Beta Inc", "subdomain": "beta" }
+    ]
+  }
+}
+3.2 Get Tenant Details
+Retrieves detailed information about a specific tenant.
+
+Endpoint: GET /tenants/:id
+
+Access: Super Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "id": "uuid",
+  "name": "Acme Corp",
+  "status": "active"
+}
+3.3 Update Tenant
+Updates tenant information such as name or status.
+
+Endpoint: PUT /tenants/:id
+
+Access: Super Admin
+
+Request Body (JSON)
+json
+Copy code
+{
+  "name": "Acme Global",
+  "status": "inactive"
+}
+4. User Management (Tenant Admin)
+4.1 List Users
+Lists all users belonging to the tenant.
+
+Endpoint: GET /tenants/:tenantId/users
+
+Access: Tenant Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "data": {
+    "users": [
+      { "id": "u1", "fullName": "Alice", "role": "user" }
+    ]
+  }
+}
+4.2 Create User
+Adds a new user to the tenant.
+
+Endpoint: POST /tenants/:tenantId/users
+
+Access: Tenant Admin
+
+Request Body (JSON)
+json
+Copy code
+{
+  "email": "alice@acme.com",
+  "password": "Password123",
+  "fullName": "Alice Smith",
+  "role": "user"
+}
+4.3 Update User
+Updates an existing user’s profile or role.
+
+Endpoint: PUT /users/:id
+
+Access: Tenant Admin
+
+Request Body (JSON)
+json
+Copy code
+{
+  "fullName": "Alice Jones",
+  "role": "tenant_admin"
+}
+4.4 Delete User
+Removes a user from the tenant.
+
+Endpoint: DELETE /users/:id
+
+Access: Tenant Admin
+
+5. Project Management
+5.1 List Projects
+Lists all projects associated with the tenant.
+
+Endpoint: GET /projects
+
+Access: User / Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "data": {
+    "projects": [
+      { "id": "p1", "title": "Website Redesign", "status": "active" }
+    ]
+  }
+}
+5.2 Create Project
+Creates a new project within the tenant.
+
+Endpoint: POST /projects
+
+Access: Admin
+
+Request Body (JSON)
+json
+Copy code
+{
+  "title": "Q3 Marketing Campaign",
+  "description": "Planning for Q3",
+  "status": "active"
+}
+5.3 Get Project Details
+Retrieves detailed information for a specific project.
+
+Endpoint: GET /projects/:id
+
+Access: User / Admin
+
+5.4 Update Project
+Updates an existing project’s details.
+
+Endpoint: PUT /projects/:id
+
+Access: Admin
+
+Request Body (JSON)
+json
+Copy code
+{
+  "status": "completed"
+}
+Note:
+Project deletion is typically handled using:
+DELETE /projects/:id
+
+6. Task Management
+6.1 List Tasks
+Retrieves all tasks associated with a specific project.
+
+Endpoint: GET /projects/:projectId/tasks
+
+Access: User / Admin
+
+Response (200 OK)
+json
+Copy code
+{
+  "data": {
+    "tasks": [
+      { "id": "t1", "title": "Draft content", "status": "TODO" }
+    ]
+  }
+}
+6.2 Create Task
+Creates a new task within a project.
+
+Endpoint: POST /projects/:projectId/tasks
+
+Access: Admin
+
+Request Body (JSON)
+json
+Copy code
+{
+  "title": "Fix Header Bug",
+  "description": "CSS issue on mobile",
+  "priority": "HIGH",
+  "dueDate": "2023-12-31"
+}
+6.3 Update Task Status
+Updates the status of a task (e.g., Kanban board interaction).
+
+Endpoint: PATCH /tasks/:id/status
+
+Access: User / Admin
+
+Request Body (JSON)
+json
+Copy code
+{
+  "status": "IN_PROGRESS"
+}
+6.4 Update Task Details
+Performs a full update of a task.
+
+Endpoint: PUT /tasks/:id
+
+Access: Admin
+
+Request Body (JSON)
+json
+Copy code
+{
+  "title": "Fix Header Bug (Updated)",
+  "priority": "MEDIUM"
+}
