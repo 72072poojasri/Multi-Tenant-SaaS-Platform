@@ -1,319 +1,337 @@
-Multi-Tenant SaaS Platform – API Documentation
-Authentication & Security
-Authentication Method: Bearer Token (JWT)
+System Architecture Document
+Project Name: Multi-Tenant SaaS Project Management System
+Date: October 26, 2025
+Version: 1.0
+Author: AWS Student / Lead Developer
 
-Authorization Header:
-Authorization: Bearer <your_jwt_token>
+1. Architecture Overview
+The system is built using a containerized three-tier web architecture, designed to ensure scalability, modularity, and secure tenant isolation.
+All services are orchestrated using Docker Compose, providing consistent environments across development and deployment stages.
 
-Token Expiry: 24 hours
+2. High-Level Architecture Diagram
+mermaid
+Copy code
+graph LR
+    User[Client Browser] --> Frontend[Frontend Container<br/>React + Vite]
+    Frontend --> Backend[Backend Container<br/>Node.js + Express]
+    Backend --> DB[(PostgreSQL Database)]
 
-Base URL (Local):
-http://localhost:5000/api
+    subgraph DockerNetwork
+        Frontend
+        Backend
+        DB
+    end
 
-1. System
-1.1 Health Check
-Checks whether the API server and database connection are healthy.
+    subgraph SecurityLayer
+        Backend --> JWT[JWT Authentication]
+        Backend --> RBAC[RBAC Middleware]
+    end
+3. System Architecture & Components
+The application follows a multi-tenant, containerized architecture with a clear separation of concerns across:
 
-Endpoint: GET /health
+Client Layer (Frontend)
 
-Access: Public
+Application Layer (Backend API)
 
-Response (200 OK)
+Data Layer (Database)
+
+Each layer is independently scalable and communicates through well-defined interfaces.
+
+4. Component Details
+4.1 Client Layer (Frontend)
+Technology: React.js (Vite build tool)
+
+Container Port Mapping: 3000 (External) → 3000 (Internal)
+
+Responsibilities:
+
+Render the user interface
+
+Handle user interactions
+
+Manage authentication state (JWT storage)
+
+Communicate with backend REST APIs
+
+Multi-Tenancy Handling:
+
+Tenant context is resolved using:
+
+Subdomain-based routing (e.g., tenant1.app.com), or
+
+Tenant selection during login
+
+4.2 Application Layer (Backend API)
+Technology: Node.js, Express.js
+
+Container Port Mapping: 5000 (External) → 5000 (Internal)
+
+Responsibilities:
+
+Execute business logic
+
+Handle authentication using JWT
+
+Enforce authorization via RBAC
+
+Guarantee tenant-level data isolation
+
+Tenant Isolation Mechanism:
+
+JWT contains the tenant_id
+
+Middleware extracts and validates tenant_id
+
+All database queries are scoped by tenant_id
+
+Prevents cross-tenant data access
+
+4.3 Data Layer (Database)
+Technology: PostgreSQL 15
+
+Container Port Mapping: 5432 (External) → 5432 (Internal)
+
+Responsibilities:
+
+Persistent relational data storage
+
+Isolation Strategy:
+
+Shared Database, Shared Schema
+
+Logical isolation using a tenant_id discriminator
+
+tenant_id is present in all tenant-owned tables
+
+5. High-Level Multi-Tenant Architecture
+mermaid
+Copy code
+graph LR
+    Client[Frontend<br/>React.js :3000] -->|HTTPS + JWT| API[Backend API<br/>Node.js :5000]
+    API -->|Tenant-Scoped SQL Queries| DB[(PostgreSQL 15<br/>Shared Database)]
+
+    subgraph Multi-Tenant Isolation
+        API
+        DB
+    end
+6. Database Schema Design (ERD)
+The database schema is designed following Third Normal Form (3NF) to reduce redundancy and maintain data integrity.
+
+The tenant_id column acts as the logical partition key, enabling secure multi-tenancy within a shared database, shared schema model.
+
+mermaid
+Copy code
+erDiagram
+    TENANTS ||--o{ USERS : owns
+    TENANTS ||--o{ PROJECTS : owns
+    TENANTS ||--o{ TASKS : owns
+    TENANTS ||--o{ AUDIT_LOGS : records
+
+    USERS ||--o{ PROJECTS : creates
+    PROJECTS ||--o{ TASKS : contains
+    USERS ||--o{ TASKS : assigned_to
+
+    TENANTS {
+        uuid id PK
+        string name
+        string subdomain UK
+        string status
+        string subscription_plan
+        int max_users
+        int max_projects
+    }
+
+    USERS {
+        uuid id PK
+        uuid tenant_id FK
+        string email
+        string password_hash
+        string full_name
+        string role
+    }
+
+    PROJECTS {
+        uuid id PK
+        uuid tenant_id FK
+        uuid created_by FK
+        string name
+        string description
+        string status
+    }
+
+    TASKS {
+        uuid id PK
+        uuid tenant_id FK
+        uuid project_id FK
+        uuid assigned_to FK
+        string title
+        string priority
+        string status
+        date due_date
+    }
+
+    AUDIT_LOGS {
+        uuid id PK
+        uuid tenant_id FK
+        string action
+        string entity_type
+        uuid entity_id
+        string ip_address
+    }
+7. Schema Details
+7.1 tenants (Root Entity)
+Primary Key: id (UUID)
+
+Attributes:
+
+name
+
+subdomain (Unique)
+
+status
+
+subscription_plan
+
+Limits & Constraints:
+
+max_users
+
+max_projects
+
+Isolation Note:
+
+Root table; does not contain tenant_id
+
+7.2 users
+Primary Key: id (UUID)
+
+Foreign Key:
+
+tenant_id → tenants.id (ON DELETE CASCADE) [ISOLATION KEY]
+
+Attributes:
+
+email
+
+password_hash
+
+full_name
+
+role
+
+Constraints:
+
+UNIQUE (tenant_id, email)
+(Email uniqueness enforced per tenant)
+
+7.3 projects
+Primary Key: id (UUID)
+
+Foreign Keys:
+
+tenant_id → tenants.id (ON DELETE CASCADE) [ISOLATION KEY]
+
+created_by → users.id
+
+Attributes:
+
+name
+
+description
+
+status
+
+Index:
+
+sql
+Copy code
+CREATE INDEX idx_projects_tenant ON projects(tenant_id);
+7.4 tasks
+Primary Key: id (UUID)
+
+Foreign Keys:
+
+project_id → projects.id (ON DELETE CASCADE)
+
+tenant_id → tenants.id [ISOLATION KEY]
+
+assigned_to → users.id (Nullable)
+
+Attributes:
+
+title
+
+priority
+
+status
+
+due_date
+
+Index:
+
+sql
+Copy code
+CREATE INDEX idx_tasks_tenant ON tasks(tenant_id);
+7.5 audit_logs
+Primary Key: id (UUID)
+
+Foreign Key:
+
+tenant_id → tenants.id [ISOLATION KEY]
+
+Attributes:
+
+action
+
+entity_type
+
+entity_id
+
+ip_address
+
+8. API Architecture
+The system exposes 19 RESTful endpoints, following standard REST conventions and tenant-scoped access control.
+
+Standard API Response Format
 json
 Copy code
 {
-  "status": "ok",
-  "database": "connected"
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": {}
 }
-2. Authentication Module
-2.1 Register Tenant (Sign Up)
-Registers a new Organization (Tenant) along with its first Admin user.
+9. API Modules
+Module A: Authentication
+Method	Endpoint	Description	Auth Required	Role
+POST	/api/auth/register-tenant	Register new tenant and admin	No	Public
+POST	/api/auth/login	Authenticate user and issue JWT	No	Public
+GET	/api/auth/me	Get current user context	Yes	Any
+POST	/api/auth/logout	Logout user session	Yes	Any
 
-Endpoint: POST /auth/register-tenant
+Module B: Tenant Management
+Method	Endpoint	Description	Auth Required	Role
+GET	/api/tenants	List all tenants	Yes	super_admin
+GET	/api/tenants/:tenantId	Get tenant details	Yes	super_admin, owner
+PUT	/api/tenants/:tenantId	Update tenant settings	Yes	super_admin, tenant_admin
 
-Access: Public
+Module C: User Management
+Method	Endpoint	Description	Auth Required	Role
+POST	/api/tenants/:tenantId/users	Create user	Yes	tenant_admin
+GET	/api/tenants/:tenantId/users	List users	Yes	Tenant member
+PUT	/api/users/:userId	Update user	Yes	tenant_admin, Self
+DELETE	/api/users/:userId	Delete user	Yes	tenant_admin
 
-Request Body (JSON)
-json
-Copy code
-{
-  "tenantName": "Acme Corp",
-  "subdomain": "acme",
-  "adminEmail": "admin@acme.com",
-  "password": "SecurePassword123"
-}
-Response (201 Created)
-json
-Copy code
-{
-  "message": "Tenant registered successfully",
-  "tenantId": "uuid-string"
-}
-2.2 Login
-Authenticates a user and returns a JWT access token.
+Module D: Project Management
+Method	Endpoint	Description	Auth Required	Role
+POST	/api/projects	Create project	Yes	Tenant member
+GET	/api/projects	List projects	Yes	Tenant member
+PUT	/api/projects/:projectId	Update project	Yes	Creator, Admin
+DELETE	/api/projects/:projectId	Delete project	Yes	Creator, Admin
 
-Endpoint: POST /auth/login
+Module E: Task Management
+Method	Endpoint	Description	Auth Required	Role
+POST	/api/projects/:projectId/tasks	Create task	Yes	Tenant member
+GET	/api/projects/:projectId/tasks	List tasks	Yes	Tenant member
+PATCH	/api/tasks/:taskId/status	Update task status	Yes	Tenant member
+PUT	/api/tasks/:taskId	Update task details	Yes	Tenant member
 
-Access: Public
-
-Request Body (JSON)
-json
-Copy code
-{
-  "email": "admin@acme.com",
-  "password": "SecurePassword123"
-}
-Response (200 OK)
-json
-Copy code
-{
-  "token": "eyJhbGciOiJIUzI1NiIsIn...",
-  "user": {
-    "id": "uuid",
-    "email": "admin@acme.com",
-    "role": "tenant_admin",
-    "tenantId": "uuid"
-  }
-}
-2.3 Get Current User
-Retrieves the profile of the currently authenticated user.
-
-Endpoint: GET /auth/me
-
-Access: Protected (All Roles)
-
-Response (200 OK)
-json
-Copy code
-{
-  "user": {
-    "id": "uuid",
-    "fullName": "John Doe",
-    "email": "john@acme.com",
-    "role": "user"
-  }
-}
-3. Tenant Management (Super Admin)
-3.1 List All Tenants
-Retrieves all registered tenants.
-Accessible only by Super Admin users.
-
-Endpoint: GET /tenants
-
-Access: Super Admin
-
-Response (200 OK)
-json
-Copy code
-{
-  "status": "success",
-  "results": 2,
-  "data": {
-    "tenants": [
-      { "id": "1", "name": "Acme Corp", "subdomain": "acme" },
-      { "id": "2", "name": "Beta Inc", "subdomain": "beta" }
-    ]
-  }
-}
-3.2 Get Tenant Details
-Retrieves detailed information about a specific tenant.
-
-Endpoint: GET /tenants/:id
-
-Access: Super Admin
-
-Response (200 OK)
-json
-Copy code
-{
-  "id": "uuid",
-  "name": "Acme Corp",
-  "status": "active"
-}
-3.3 Update Tenant
-Updates tenant information such as name or status.
-
-Endpoint: PUT /tenants/:id
-
-Access: Super Admin
-
-Request Body (JSON)
-json
-Copy code
-{
-  "name": "Acme Global",
-  "status": "inactive"
-}
-4. User Management (Tenant Admin)
-4.1 List Users
-Lists all users belonging to the tenant.
-
-Endpoint: GET /tenants/:tenantId/users
-
-Access: Tenant Admin
-
-Response (200 OK)
-json
-Copy code
-{
-  "data": {
-    "users": [
-      { "id": "u1", "fullName": "Alice", "role": "user" }
-    ]
-  }
-}
-4.2 Create User
-Adds a new user to the tenant.
-
-Endpoint: POST /tenants/:tenantId/users
-
-Access: Tenant Admin
-
-Request Body (JSON)
-json
-Copy code
-{
-  "email": "alice@acme.com",
-  "password": "Password123",
-  "fullName": "Alice Smith",
-  "role": "user"
-}
-4.3 Update User
-Updates an existing user’s profile or role.
-
-Endpoint: PUT /users/:id
-
-Access: Tenant Admin
-
-Request Body (JSON)
-json
-Copy code
-{
-  "fullName": "Alice Jones",
-  "role": "tenant_admin"
-}
-4.4 Delete User
-Removes a user from the tenant.
-
-Endpoint: DELETE /users/:id
-
-Access: Tenant Admin
-
-5. Project Management
-5.1 List Projects
-Lists all projects associated with the tenant.
-
-Endpoint: GET /projects
-
-Access: User / Admin
-
-Response (200 OK)
-json
-Copy code
-{
-  "data": {
-    "projects": [
-      { "id": "p1", "title": "Website Redesign", "status": "active" }
-    ]
-  }
-}
-5.2 Create Project
-Creates a new project within the tenant.
-
-Endpoint: POST /projects
-
-Access: Admin
-
-Request Body (JSON)
-json
-Copy code
-{
-  "title": "Q3 Marketing Campaign",
-  "description": "Planning for Q3",
-  "status": "active"
-}
-5.3 Get Project Details
-Retrieves detailed information for a specific project.
-
-Endpoint: GET /projects/:id
-
-Access: User / Admin
-
-5.4 Update Project
-Updates an existing project’s details.
-
-Endpoint: PUT /projects/:id
-
-Access: Admin
-
-Request Body (JSON)
-json
-Copy code
-{
-  "status": "completed"
-}
-Note:
-Project deletion is typically handled using:
-DELETE /projects/:id
-
-6. Task Management
-6.1 List Tasks
-Retrieves all tasks associated with a specific project.
-
-Endpoint: GET /projects/:projectId/tasks
-
-Access: User / Admin
-
-Response (200 OK)
-json
-Copy code
-{
-  "data": {
-    "tasks": [
-      { "id": "t1", "title": "Draft content", "status": "TODO" }
-    ]
-  }
-}
-6.2 Create Task
-Creates a new task within a project.
-
-Endpoint: POST /projects/:projectId/tasks
-
-Access: Admin
-
-Request Body (JSON)
-json
-Copy code
-{
-  "title": "Fix Header Bug",
-  "description": "CSS issue on mobile",
-  "priority": "HIGH",
-  "dueDate": "2023-12-31"
-}
-6.3 Update Task Status
-Updates the status of a task (e.g., Kanban board interaction).
-
-Endpoint: PATCH /tasks/:id/status
-
-Access: User / Admin
-
-Request Body (JSON)
-json
-Copy code
-{
-  "status": "IN_PROGRESS"
-}
-6.4 Update Task Details
-Performs a full update of a task.
-
-Endpoint: PUT /tasks/:id
-
-Access: Admin
-
-Request Body (JSON)
-json
-Copy code
-{
-  "title": "Fix Header Bug (Updated)",
-  "priority": "MEDIUM"
-}
