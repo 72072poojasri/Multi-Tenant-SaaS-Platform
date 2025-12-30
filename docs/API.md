@@ -1,24 +1,25 @@
-Multi-Tenant SaaS Platform – API Documentation (Revised)
+Multi-Tenant SaaS Platform – API Documentation (Updated)
 Authentication & Security
-Authentication: JWT (Bearer Token)
+Authentication Method: JWT (Bearer Token)
 
-Header Format:
+Authorization Header Format:
 Authorization: Bearer <JWT_TOKEN>
 
-Token Expiry: 24 hours
+Token Validity: 24 hours
 
-Base URL (Local):
+Base URL (Local Environment):
 http://localhost:5000/api
 
-1. System
+1. System Module
 1.1 Health Check
-Verifies API server and database connectivity.
+Checks whether the API server is running and verifies database connectivity.
 
 Endpoint: GET /health
 
-Access: Public
+Access Level: Public
 
-Response (200 OK)
+Successful Response (200 OK)
+
 json
 Copy code
 {
@@ -27,13 +28,14 @@ Copy code
 }
 2. Authentication Module
 2.1 Register Tenant (Sign Up)
-Creates a new Tenant (Organization) and its first Tenant Admin.
+Creates a new Tenant (Organization) along with its initial Tenant Admin account.
 
 Endpoint: POST /auth/register-tenant
 
-Access: Public
+Access Level: Public
 
 Request Body
+
 json
 Copy code
 {
@@ -43,20 +45,22 @@ Copy code
   "password": "SecurePassword123"
 }
 Response (201 Created)
+
 json
 Copy code
 {
-  "message": "Tenant registered successfully",
+  "message": "Tenant created successfully",
   "tenantId": "uuid-string"
 }
 2.2 Login
-Authenticates a user and returns a JWT token.
+Authenticates a registered user and returns a JWT access token.
 
 Endpoint: POST /auth/login
 
-Access: Public
+Access Level: Public
 
 Request Body
+
 json
 Copy code
 {
@@ -64,6 +68,7 @@ Copy code
   "password": "SecurePassword123"
 }
 Response (200 OK)
+
 json
 Copy code
 {
@@ -76,13 +81,14 @@ Copy code
   }
 }
 2.3 Get Current User
-Returns details of the logged-in user.
+Retrieves details of the currently authenticated user.
 
 Endpoint: GET /auth/me
 
-Access: Protected (All Roles)
+Access Level: Protected (All Roles)
 
 Response (200 OK)
+
 json
 Copy code
 {
@@ -95,12 +101,13 @@ Copy code
   }
 }
 3. Tenant Management (Super Admin Only)
-3.1 List All Tenants
+3.1 Retrieve All Tenants
 Endpoint: GET /tenants
 
-Access: Super Admin
+Access Level: Super Admin
 
 Response (200 OK)
+
 json
 Copy code
 {
@@ -113,12 +120,13 @@ Copy code
     ]
   }
 }
-3.2 Get Tenant Details
+3.2 Get Tenant Information
 Endpoint: GET /tenants/:id
 
-Access: Super Admin
+Access Level: Super Admin
 
 Response (200 OK)
+
 json
 Copy code
 {
@@ -127,12 +135,13 @@ Copy code
   "subdomain": "acme",
   "status": "active"
 }
-3.3 Update Tenant
+3.3 Modify Tenant Details
 Endpoint: PUT /tenants/:id
 
-Access: Super Admin
+Access Level: Super Admin
 
 Request Body
+
 json
 Copy code
 {
@@ -140,12 +149,13 @@ Copy code
   "status": "inactive"
 }
 4. User Management (Tenant Admin)
-4.1 List Users
+4.1 Get Tenant Users
 Endpoint: GET /tenants/:tenantId/users
 
-Access: Tenant Admin
+Access Level: Tenant Admin
 
 Response (200 OK)
+
 json
 Copy code
 {
@@ -160,12 +170,13 @@ Copy code
     ]
   }
 }
-4.2 Create User
+4.2 Add New User
 Endpoint: POST /tenants/:tenantId/users
 
-Access: Tenant Admin
+Access Level: Tenant Admin
 
 Request Body
+
 json
 Copy code
 {
@@ -174,30 +185,32 @@ Copy code
   "fullName": "Alice Smith",
   "role": "user"
 }
-4.3 Update User
+4.3 Update User Information
 Endpoint: PUT /users/:id
 
-Access: Tenant Admin
+Access Level: Tenant Admin
 
 Request Body
+
 json
 Copy code
 {
   "fullName": "Alice Jones",
   "role": "tenant_admin"
 }
-4.4 Delete User
+4.4 Remove User
 Endpoint: DELETE /users/:id
 
-Access: Tenant Admin
+Access Level: Tenant Admin
 
 5. Project Management
-5.1 List Projects
+5.1 Get All Projects
 Endpoint: GET /projects
 
-Access: User / Admin
+Access Level: User / Admin
 
 Response (200 OK)
+
 json
 Copy code
 {
@@ -214,9 +227,10 @@ Copy code
 5.2 Create Project
 Endpoint: POST /projects
 
-Access: Admin
+Access Level: Admin
 
 Request Body
+
 json
 Copy code
 {
@@ -227,29 +241,31 @@ Copy code
 5.3 Get Project Details
 Endpoint: GET /projects/:id
 
-Access: User / Admin
+Access Level: User / Admin
 
 5.4 Update Project
 Endpoint: PUT /projects/:id
 
-Access: Admin
+Access Level: Admin
 
 Request Body
+
 json
 Copy code
 {
   "status": "completed"
 }
-Note:
-Project deletion uses: DELETE /projects/:id
+Note: Projects can be deleted using
+DELETE /projects/:id
 
 6. Task Management
-6.1 List Tasks
+6.1 Retrieve Project Tasks
 Endpoint: GET /projects/:projectId/tasks
 
-Access: User / Admin
+Access Level: User / Admin
 
 Response (200 OK)
+
 json
 Copy code
 {
@@ -266,9 +282,10 @@ Copy code
 6.2 Create Task
 Endpoint: POST /projects/:projectId/tasks
 
-Access: Admin
+Access Level: Admin
 
 Request Body
+
 json
 Copy code
 {
@@ -280,9 +297,10 @@ Copy code
 6.3 Update Task Status
 Endpoint: PATCH /tasks/:id/status
 
-Access: User / Admin
+Access Level: User / Admin
 
 Request Body
+
 json
 Copy code
 {
@@ -291,9 +309,10 @@ Copy code
 6.4 Update Task Details
 Endpoint: PUT /tasks/:id
 
-Access: Admin
+Access Level: Admin
 
 Request Body
+
 json
 Copy code
 {
