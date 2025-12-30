@@ -1,67 +1,65 @@
 Multi-Tenant SaaS Platform
 Overview
-A production-ready B2B Multi-Tenant SaaS Platform built to demonstrate real-world system design principles such as Multi-Tenancy, Strict Data Isolation, and Role-Based Access Control (RBAC).
-Each organization (Tenant) operates within a fully isolated workspace while sharing a common application infrastructure.
+A production-grade B2B Multi-Tenant SaaS Platform built to demonstrate real-world system design principles such as Multi-Tenancy, Strict Data Isolation, and Role-Based Access Control (RBAC). Each organization (Tenant) operates within a completely isolated workspace while sharing the same application infrastructure.
 
-This platform mirrors how modern SaaS products like Jira, Notion, and Asana securely support multiple organizations within a single system.
+This project illustrates how modern SaaS products (for example, Jira, Notion, and Asana) securely manage multiple organizations within a single system.
 
 Core Concepts Demonstrated
-Multi-Tenant Architecture with strict tenant isolation using tenant_id
+Multi-Tenancy with logical isolation using tenant_id at the database level
 
-Role-Based Access Control (RBAC) across system and tenant levels
+Role-Based Access Control (RBAC) across system and tenant roles
 
-JWT-based Authentication & Authorization
+JWT-based Authentication and Authorization
 
-Secure REST APIs with middleware-based validation
+Secure Backend APIs with validation and access guards
 
-Scalable SaaS Architecture suitable for enterprise environments
+Scalable SaaS Architecture designed for enterprise usage
 
 User Roles & Permissions
-1. Super Admin (System-Level)
-Manage and monitor all registered tenants
+1. Super Admin (System Level)
+Manage all registered tenants
 
-View platform-wide usage metrics
+Monitor system-wide usage and platform health
 
 No access to tenant-specific operational data
 
-2. Tenant Admin (Organization-Level)
-Manage organization users and roles
+2. Tenant Admin (Organization Level)
+Manage organization users
 
-Create, update, and oversee projects and tasks
+Assign roles and permissions
 
-Control tenant-level access and configuration
+Create, update, and manage projects and tasks
 
 3. Standard User
-Access assigned projects only
+Access only assigned projects
 
 Create and update tasks
 
-No permissions for user or organization management
+Cannot manage users or organization-level settings
 
 Key Features
 🔐 Security & Authentication
-JWT-based stateless authentication
+JWT-based authentication
 
 Password hashing using Bcrypt
 
 Secure CORS configuration
 
-Role and tenant validation via middleware
+Middleware-based role and tenant validation
 
 🏢 Multi-Tenancy Architecture
-Shared database with logical tenant isolation
+Centralized database with logical tenant isolation
 
-All entities scoped using tenant_id
+Every entity scoped using tenant_id
 
 Protection against cross-tenant data access
 
 📊 Project & Task Management
-Tenant-specific project workspaces
+Tenant-specific projects
 
-Task assignments with priorities and due dates
+Task assignment with priorities and deadlines
 
-Task lifecycle management
-(Todo → In Progress → Completed)
+Task status lifecycle (Todo → In Progress → Completed)
 
 👥 Team Management
 Tenant Admins can:
@@ -72,15 +70,15 @@ Remove users
 
 Update user roles
 
-🧑‍💻 Dashboards
-Super Admin Dashboard: Global tenant overview
+🧑‍💻 Admin Dashboards
+Super Admin Dashboard: Global tenant overview and monitoring
 
-Tenant Dashboard: Organization-level analytics
+Tenant Dashboard: Organization-specific analytics and insights
 
 🎨 Responsive UI
-Clean and intuitive React-based interface
+Clean and intuitive React-based dashboard
 
-Fully responsive design using Flexbox and Grid
+Mobile-friendly layout using Flexbox and Grid
 
 Technology Stack
 Frontend
@@ -110,7 +108,7 @@ PostgreSQL (v15)
 
 Docker & Docker Compose
 
-Alpine Linux-based containers
+Alpine Linux containers
 
 System Architecture
 csharp
@@ -133,29 +131,29 @@ Node.js v18+
 PostgreSQL (for local setup only)
 
 Method 1: Docker Setup (Recommended)
-Step 1: Clone the Repository
+Step 1: Clone Repository
 bash
 Copy code
 git clone <your-repo-url>
 cd Multi-Tenant-SaaS-Platform
 Step 2: Configure Environment Variables
-Create a .env file in the root directory (or validate docker-compose.yml):
+Create a .env file in the root directory (or verify values in docker-compose.yml):
 
 env
 Copy code
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=saas_db
-Step 3: Start the Application
+Step 3: Run Application
 bash
 Copy code
 docker-compose up -d --build
-Step 4: Access the Application
+Step 4: Access Application
 Frontend: http://localhost:3000
 
 Backend Health Check: http://localhost:5000/api/health
 
-✔ Database migrations and seed data execute automatically
+✔ Database migrations and seed data are executed automatically
 
 Method 2: Local Development Setup
 Backend Setup
@@ -180,60 +178,15 @@ DATABASE_URL	PostgreSQL connection string	Docker value
 JWT_SECRET	JWT signing secret	Custom
 FRONTEND_URL	Allowed CORS origin	http://localhost:3000
 
-API Overview
+API Documentation
 Base URL (Local): http://localhost:5000/api
 
-All protected endpoints require:
+All protected endpoints require the following header:
 
 makefile
 Copy code
 Authorization: Bearer <JWT_TOKEN>
-Token Validity: 24 hours
-
-API Modules Summary
-System
-GET /health
-
-Authentication
-POST /auth/register-tenant
-
-POST /auth/login
-
-GET /auth/me
-
-Tenant Management (Super Admin)
-GET /tenants
-
-GET /tenants/:id
-
-PUT /tenants/:id
-
-User Management (Tenant Admin)
-GET /tenants/:tenantId/users
-
-POST /tenants/:tenantId/users
-
-PUT /users/:id
-
-DELETE /users/:id
-
-Project Management
-GET /projects
-
-POST /projects
-
-GET /projects/:id
-
-PUT /projects/:id
-
-Task Management
-GET /projects/:projectId/tasks
-
-POST /projects/:projectId/tasks
-
-PATCH /tasks/:id/status
-
-PUT /tasks/:id
+Token expiry duration: 24 hours
 
 Seeded Test Credentials
 Super Admin
@@ -241,7 +194,7 @@ Email: superadmin@system.com
 
 Password: Admin@123
 
-Tenant Admin (Demo Tenant)
+Tenant Admin (Demo Company)
 Email: admin@demo.com
 
 Password: Admin@123
@@ -255,20 +208,13 @@ Subscription and billing integration (Stripe)
 
 Audit logs and activity tracking
 
-Fine-grained permission system
+Advanced role-based permission management
 
-Microservices-based scaling
+Microservices-based scalability
 
 Project Purpose
-This project is designed for portfolio presentation, technical interviews, and real-world SaaS architecture demonstration, highlighting full-stack development, backend security, and scalable system design.
+This project is developed for portfolio presentation, technical interviews, and real-world SaaS architecture demonstration, highlighting backend security, scalability, and full-stack engineering practices.
 
-System Architecture & PRD Summary
-Containerized three-tier architecture
+Key Takeaway
+The platform demonstrates how a single SaaS application can securely serve multiple organizations while maintaining strict data isolation, role-based security, and scalable architecture.
 
-Strong tenant isolation using tenant_id
-
-Clean separation of frontend, backend, and database layers
-
-Enterprise-grade RBAC and security
-
-Designed to meet both functional and non-functional SaaS requirements
