@@ -1,52 +1,76 @@
-Getting Started with a React Application
-This project was initialized using Create React App, a popular tool for setting up React applications with minimal configuration.
+# Multi-Tenant SaaS Platform – Frontend (React)
 
-Available Commands
+This frontend application was built using **Create React App (CRA)** and serves as the user interface for the **Multi-Tenant SaaS Platform**. It provides secure authentication, role-based dashboards, and tenant-specific project and task management.
+
+---
+
+## Available Scripts
+
 In the project directory, you can run the following commands:
 
-npm start
-Runs the application in development mode.
-Open http://localhost:3000 in your browser to view the app.
+---
 
-The page will automatically reload when you make changes.
-Any linting or runtime errors will be displayed in the console.
+### npm start
 
-npm test
-Launches the test runner in interactive watch mode.
-It continuously watches for changes and re-runs tests automatically.
+Runs the application in **development mode**.
 
-More information is available in the Running Tests section of the documentation.
+- Opens automatically at: http://localhost:3000
+- The page reloads on code changes
+- Any lint or runtime errors will be displayed in the console
 
-npm run build
-Builds the application for production and outputs the files into the build folder.
+This mode is intended for local development and debugging.
 
-The production build:
+---
 
-Is optimized for performance
+### npm test
 
-Uses minified code
+Launches the test runner in **interactive watch mode**.
 
-Includes hashed filenames
+- Useful for running unit and component tests
+- Supports continuous testing during development
 
-After the build is complete, the application is ready for deployment.
+More details:
+https://facebook.github.io/create-react-app/docs/running-tests
 
-npm run eject
-⚠️ Note: This is a one-way operation. Once you eject, you cannot go back.
+---
 
-If you want full control over the configuration (Webpack, Babel, ESLint, etc.), you can eject the project.
+### npm run build
 
-This command will:
+Builds the application for **production**.
 
-Remove Create React App as a dependency
+- Generates an optimized build in the `build/` folder
+- React is bundled in production mode
+- Output files are minified and include hashed filenames for caching
+- The build is ready for deployment to a web server or container
 
-Copy all configuration files and dependencies into your project
+More details:
+https://facebook.github.io/create-react-app/docs/deployment
 
-All commands except eject will continue to work, but you will be responsible for managing the configuration.
+---
 
-You do not need to eject for most projects. The default configuration works well for small and medium-scale applications.
+### npm run eject
 
-Learn More
-You can learn more from the following official resources:
+WARNING: This is a **one-way operation**.
+
+- Removes the single CRA build dependency
+- Copies all configuration files (Webpack, Babel, ESLint, etc.) into the project
+- Gives full control over the build configuration
+- Once ejected, this action cannot be undone
+
+You generally do NOT need to eject unless advanced customization is required.
+
+---
+
+## Project Usage Notes
+
+- This frontend communicates with the backend via REST APIs
+- Authentication is handled using JWT tokens
+- Role-based routing ensures users only access authorized pages
+- Tenant context is maintained across sessions
+
+---
+
+## Learn More
 
 Create React App Documentation:
 https://facebook.github.io/create-react-app/docs/getting-started
@@ -54,21 +78,25 @@ https://facebook.github.io/create-react-app/docs/getting-started
 React Documentation:
 https://reactjs.org/
 
-Additional Resources
+---
+
+## Additional References
+
 Code Splitting:
 https://facebook.github.io/create-react-app/docs/code-splitting
 
-Analyzing Bundle Size:
+Bundle Size Analysis:
 https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
 
-Making a Progressive Web App:
+Progressive Web App (PWA):
 https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
 
 Advanced Configuration:
 https://facebook.github.io/create-react-app/docs/advanced-configuration
 
-Deployment Guide:
+Deployment:
 https://facebook.github.io/create-react-app/docs/deployment
 
-Build Fails to Minify:
+Build Troubleshooting:
 https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+
