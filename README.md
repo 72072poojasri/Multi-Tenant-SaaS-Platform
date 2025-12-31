@@ -1,255 +1,170 @@
 # Multi-Tenant SaaS Platform
 
 ## Overview
+A production-grade B2B Multi-Tenant SaaS Application built to demonstrate real-world system design concepts such as Multi-Tenancy, Strict Data Isolation, and Role-Based Access Control (RBAC).
 
-A production-grade **B2B Multi-Tenant SaaS Platform** designed to showcase real-world system design concepts such as **Multi-Tenancy**, **Strict Data Isolation**, and **Role-Based Access Control (RBAC)**. Each organization (Tenant) operates within a completely isolated workspace while sharing the same application infrastructure.
+The platform enables multiple organizations (Tenants) to operate in fully isolated workspaces while sharing the same application infrastructure. Each tenant can securely manage its own users, projects, and tasks.
 
-This project demonstrates how modern SaaS products (e.g., Jira, Notion, Asana) manage multiple organizations securely within a single system.
-
----
-
-## Core Concepts Demonstrated
-
-* **Multi-Tenancy with Isolation** using `tenant_id` at the database level
-* **RBAC (Role-Based Access Control)** across system roles
-* **JWT Authentication & Authorization**
-* **Secure Backend APIs** with validation and access guards
-* **Scalable SaaS Architecture** suitable for enterprise use
-
----
-
-## User Roles & Permissions
-
-### 1. Super Admin (System Level)
-
-* Manage all registered tenants
-* Monitor system-wide usage
-* No access to tenant-specific operational data
-
-### 2. Tenant Admin (Organization Level)
-
-* Manage organization users
-* Assign roles and permissions
-* Create and manage projects and tasks
-
-### 3. Standard User
-
-* Access only assigned projects
-* Create and update tasks
-* Cannot manage users or organization settings
+The system enforces a strict hierarchy:
+- Super Admin: System-level control across all tenants
+- Tenant Admin: Organization-level management
+- Standard User: Task and project execution
 
 ---
 
 ## Key Features
 
-### 🔐 Security & Authentication
+- Multi-Tenant Architecture
+  - Tenant-based data isolation using tenant_id
+  - Prevents data leakage between organizations
 
-* JWT-based authentication
-* Password hashing using **Bcrypt**
-* Secure CORS configuration
-* Middleware-based role and tenant validation
+- Secure Authentication
+  - JWT-based authentication
+  - Password hashing using Bcrypt
+  - Token-based session management
 
-### 🏢 Multi-Tenancy Architecture
+- Role-Based Access Control (RBAC)
+  - Clear separation of permissions
+  - Middleware-enforced authorization
 
-* Centralized database with logical isolation
-* Every entity scoped using `tenant_id`
-* Protection against cross-tenant data leaks
+- Project Management
+  - Create and manage tenant-specific projects
+  - Track progress and status
 
-### 📊 Project & Task Management
+- Task Orchestration
+  - Assign tasks with priorities and deadlines
+  - Update and monitor task status
 
-* Tenant-specific projects
-* Task assignment with priorities and deadlines
-* Task status lifecycle (Todo → In Progress → Completed)
+- Team Management
+  - Invite, remove, and manage users
+  - Role assignment within tenants
 
-### 👥 Team Management
+- Super Admin Dashboard
+  - Global visibility of all tenants
+  - No access to tenant operational data
 
-* Tenant Admins can:
-
-  * Invite users
-  * Remove users
-  * Change roles
-
-### 🧑‍💻 Admin Dashboards
-
-* **Super Admin Dashboard**: Global tenant overview
-* **Tenant Dashboard**: Organization-specific analytics
-
-### 🎨 Responsive UI
-
-* Clean and intuitive React dashboard
-* Mobile-friendly layout using Flexbox & Grid
+- Responsive UI
+  - Modern dashboard built with React
+  - Mobile-friendly layout
 
 ---
 
 ## Technology Stack
 
-### Frontend
+Frontend:
+- React.js (v18)
+- React Context API
+- React Router DOM (v6)
+- Axios
+- CSS3 (Flexbox & Grid)
 
-* **React.js (v18)**
-* React Router DOM (v6)
-* Context API for state management
-* Axios for API communication
-* CSS3 (Flexbox & Grid)
+Backend:
+- Node.js (v18)
+- Express.js
+- Prisma ORM
+- JWT, Bcrypt, CORS
+- Express Validator
 
-### Backend
-
-* **Node.js (v18)**
-* Express.js
-* Prisma ORM
-* JWT Authentication
-* Express Validator
-
-### Database & DevOps
-
-* PostgreSQL (v15)
-* Docker & Docker Compose
-* Alpine Linux containers
+Database & DevOps:
+- PostgreSQL (v15)
+- Docker & Docker Compose
+- Linux (Alpine containers)
 
 ---
 
-## System Architecture
-
-```
-Client (React)
-     |
-REST APIs (JWT Secured)
-     |
-Node.js + Express
-     |
-Prisma ORM
-     |
-PostgreSQL (tenant_id scoped data)
-```
+## Architecture Overview
+The application follows a Client–Server architecture. The React frontend communicates with the Node.js/Express backend through REST APIs. The backend connects to a PostgreSQL database where all queries are strictly scoped using tenant_id to ensure complete data isolation.
 
 ---
 
 ## Installation & Setup
 
-### Prerequisites
-
-* Docker & Docker Compose (Recommended)
-* Node.js v18+
-* PostgreSQL (Local setup only)
-
----
-
-## Method 1: Docker Setup (Recommended)
-
-### Step 1: Clone Repository
-
-```bash
-git clone <your-repo-url>
-cd Multi-Tenant-SaaS-Platform
-```
-
-### Step 2: Configure Environment Variables
-
-Create `.env` in root (or verify `docker-compose.yml`):
-
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=saas_db
-```
-
-### Step 3: Run Application
-
-```bash
-docker-compose up -d --build
-```
-
-### Step 4: Access Application
-
-* Frontend: [http://localhost:3000](http://localhost:3000)
-* Backend Health: [http://localhost:5000/api/health](http://localhost:5000/api/health)
-
-✔ Migrations and seed data run automatically
+Prerequisites:
+- Docker & Docker Compose (Recommended)
+- Node.js v18+
+- PostgreSQL (for local setup)
 
 ---
 
-## Method 2: Local Development Setup
+### Method 1: Docker Setup (Recommended)
 
-### Backend Setup
+1. Clone the Repository
+   git clone <your-repo-url>
+   cd Multi-Tenant-SaaS-Platform
 
-```bash
-cd backend
-npm install
-cp .env.example .env
-npx prisma migrate dev --name init
-npm run seed
-npm start
-```
+2. Configure Environment Variables
+   Create a .env file in the root directory:
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   POSTGRES_DB=saas_db
 
-### Frontend Setup
+3. Start the Application
+   docker-compose up -d --build
 
-```bash
-cd frontend
-npm install
-npm start
-```
+4. Access the Application
+   Frontend: http://localhost:3000
+   Backend Health: http://localhost:5000/api/health
+
+Note: Database migrations and seed data run automatically on startup.
+
+---
+
+### Method 2: Local Development (Manual)
+
+1. Database
+   Ensure PostgreSQL is running on port 5432
+
+2. Backend Setup
+   cd backend
+   npm install
+   cp .env.example .env
+   Update database credentials in .env
+   npx prisma migrate dev --name init
+   npm run seed
+   npm start
+
+3. Frontend Setup
+   cd frontend
+   npm install
+   npm start
 
 ---
 
 ## Environment Variables
 
-| Variable     | Description                  | Default                                        |
-| ------------ | ---------------------------- | ---------------------------------------------- |
-| PORT         | Backend server port          | 5000                                           |
-| DATABASE_URL | PostgreSQL connection string | Docker value                                   |
-| JWT_SECRET   | JWT signing secret           | Custom                                         |
-| FRONTEND_URL | Allowed CORS origin          | [http://localhost:3000](http://localhost:3000) |
+PORT=5000
+DATABASE_URL=postgresql://...@database:5432/saas_db
+JWT_SECRET=your_secure_secret
+FRONTEND_URL=http://localhost:3000
 
 ---
 
 ## API Endpoints
 
-### Authentication
+Authentication:
+- POST /api/auth/register-tenant
+- POST /api/auth/login
 
-* POST `/api/auth/register-tenant`
-* POST `/api/auth/login`
+Projects & Tasks:
+- GET /api/projects
+- POST /api/projects
+- POST /api/projects/:id/tasks
+- PATCH /api/tasks/:id/status
 
-### Projects & Tasks
-
-* GET `/api/projects`
-* POST `/api/projects`
-* POST `/api/projects/:id/tasks`
-* PATCH `/api/tasks/:id/status`
-
-### Tenant Management
-
-* GET `/api/tenants` (Super Admin)
-* GET `/api/tenants/:id/users` (Tenant Admin)
-* POST `/api/tenants/:id/users` (Tenant Admin)
+Management:
+- GET /api/tenants (Super Admin)
+- GET /api/tenants/:id/users (Tenant Admin)
+- POST /api/tenants/:id/users (Tenant Admin)
 
 ---
 
-## Seeded Test Credentials
+## Testing Credentials (Seed Data)
 
-### Super Admin
+Super Admin:
+Email: superadmin@system.com
+Password: Admin@123
 
-* Email: [superadmin@system.com](mailto:superadmin@system.com)
-* Password: Admin@123
-
-### Tenant Admin (Demo Company)
-
-* Email: [admin@demo.com](mailto:admin@demo.com)
-* Password: Admin@123
-* Subdomain: demo
-
----
-
-## Future Enhancements
-
-* OAuth (Google / GitHub login)
-* Subscription & Billing (Stripe)
-* Audit Logs & Activity Tracking
-* Advanced Role Permissions
-* Microservices-based scaling
-
----
-
-## Project Purpose
-
-This project is built for **portfolio, interviews, and real-world SaaS architecture demonstration**, showcasing backend security, scalable design, and full-stack engineering skills.
-
-
+Tenant Admin (Demo Organization):
+Email: admin@demo.com
+Password: Admin@123
+Subdomain: demo
